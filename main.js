@@ -5,7 +5,8 @@ let isMyTurn = true;
 let myColor = "red";
 let board = [];
 let highlighted = null;
-let currentMoveType = "Move";
+let currentMoveType = "Move/Swap";
+let currentMoveIndex = 0;
 let isSecondMove = false;
 let firstMove = null;
 let lastTakes = {"red1": "black1", "black1": "red1"};
@@ -203,7 +204,15 @@ function trySwap(fx, fy, tx, ty, moves) {
 function generateMovesFor(i, j, type) {
     let moves = [];
     switch (type.toLowerCase()) {
-        case "move":
+        case "move/swap":
+            trySwap(i, j, i-1, j-1, moves);
+            trySwap(i, j, i-1, j, moves);
+            trySwap(i, j, i-1, j+1, moves);
+            trySwap(i, j, i, j-1, moves);
+            trySwap(i, j, i, j+1, moves);
+            trySwap(i, j, i+1, j-1, moves);
+            trySwap(i, j, i+1, j, moves);
+            trySwap(i, j, i+1, j+1, moves);
             if (firstMove && 
                 firstMove.type == "move" && 
                 board[firstMove.data.tx][firstMove.data.ty].piece == board[i][j].piece && 
@@ -218,7 +227,7 @@ function generateMovesFor(i, j, type) {
             tryMove(i, j, i+1, j, moves);
             tryMove(i, j, i+1, j+1, moves);
             break;
-        case "take":
+        case "take/pass":
             tryTake(i, j, i-1, j-1, moves);
             tryTake(i, j, i-1, j, moves);
             tryTake(i, j, i-1, j+1, moves);
@@ -227,16 +236,14 @@ function generateMovesFor(i, j, type) {
             tryTake(i, j, i+1, j-1, moves);
             tryTake(i, j, i+1, j, moves);
             tryTake(i, j, i+1, j+1, moves);
-            if (board[i][j].piece == "4" || board[i][j].piece == "5")
-                break;
-            for (let i = 0; i < moves.length; i++) {
-                let move = moves[i];
-                if (lastTakes[board[move.data.fx][move.data.fy].pieceAsWhole] == board[move.data.tx][move.data.ty].pieceAsWhole) {
-                    moves.splice(i--, 1);
+            if (board[i][j].piece != "4" && board[i][j].piece != "5") {
+                for (let i = 0; i < moves.length; i++) {
+                    let move = moves[i];
+                    if (lastTakes[board[move.data.fx][move.data.fy].pieceAsWhole] == board[move.data.tx][move.data.ty].pieceAsWhole) {
+                        moves.splice(i--, 1);
+                    }
                 }
             }
-            break;
-        case "pass":
             if (!board[i][j].hasBall)
                 break;
             tryPass(i, j, -1, -1, moves);
@@ -257,16 +264,6 @@ function generateMovesFor(i, j, type) {
                 tryPass(i, j, 2, -1, moves, false);
                 tryPass(i, j, 2, 1, moves, false);
             }
-            break;
-        case "swap":
-            trySwap(i, j, i-1, j-1, moves);
-            trySwap(i, j, i-1, j, moves);
-            trySwap(i, j, i-1, j+1, moves);
-            trySwap(i, j, i, j-1, moves);
-            trySwap(i, j, i, j+1, moves);
-            trySwap(i, j, i+1, j-1, moves);
-            trySwap(i, j, i+1, j, moves);
-            trySwap(i, j, i+1, j+1, moves);
             break;
     }
     return moves;
@@ -349,23 +346,18 @@ function drawToScreen() {
     if (!isMyTurn)
         return moveTypes.innerHTML = "<h1>Waiting for other person (" + (isSecondMove*1) + "/2 moves)...</h1>";
     if (!highlighted)
-        return moveTypes.innerHTML = "<h1>Click a piece to show options</h1>";
-    let types = ["Move", "Take", "Pass", "Swap"];
+        return moveTypes.innerHTML = "<h1>Click a piece to show moves</h1>";
+    let types = ["Move/Swap", "Take/Pass"];
     types = types.filter(t => generateMovesFor(highlighted.x, highlighted.y, t).length > 0);
-    if (currentMoveType.indexOf(currentMoveType) == -1)
-        currentMoveType = types[0];
-    for (let type of ["Off", ...types]) {
-        let div = document.createElement("div");
-        div.innerText = type;
-        div.classList.add("move-type");
-        if (currentMoveType == type)
-            div.style.backgroundColor = "#41980a";
-        div.onclick = e => {
-            currentMoveType = type;
-            drawToScreen();
-        };
-        moveTypes.appendChild(div);
+    if (currentMoveIndex >= types.length) {
+        currentMoveIndex = 0;
+        highlighted = null;
+        return;
     }
+    currentMoveType = types[currentMoveIndex];
+    if (currentMoveType.indexOf(currentMoveType) == -1)
+        currentMoveIndex = 0;
+    currentMoveType = types[currentMoveIndex];
     for (let move of generateMovesFor(highlighted.x, highlighted.y, currentMoveType)) {
         let thing;
         if (move.type == "move") {
@@ -407,6 +399,7 @@ function drawToScreen() {
 
         thing.addEventListener("click", e => {
             highlighted = null;
+            currentMoveIndex = 0;
             move.make();
         })
     }
@@ -478,7 +471,10 @@ document.body.onclick = (e) => {
   let [x, y] = trg.id.split("c").join("").split(",").map(Number);
   if (board[x][y].isEmpty || board[x][y].color != myColor)
     return;
+  if (highlighted && highlighted.x == x && highlighted.y == y)
+    currentMove = [++currentMoveIndex];
+  else
+    currentMoveType = 0;
   highlighted = {x, y};
-  currentMoveType = "Move";
   drawToScreen();
 }
