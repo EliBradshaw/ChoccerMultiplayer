@@ -453,7 +453,9 @@ async function sendMessage(message) {
     )
         .then(function (response) {
             resolve(response.headers.get("Httprelay-Query"));
-        });
+        }).catch(function (error) {
+            sendMessage(message).then(resolve);
+        })
     });
 }
 async function waitForResponse() {
