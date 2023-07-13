@@ -81,6 +81,12 @@ class Move {
                     board[this.data.fx][this.data.fy].hasBall = true;
                 }
                 board[this.data.fx][this.data.fy].swapWith(this.data.tx, this.data.ty);
+                if (board[this.data.tx][this.data.ty].isGoal) {
+                    if (isMyTurn)
+                        setTimeout(alert, 500, "YOU WON");
+                    else
+                        setTimeout(alert, 500, "YOU LOST");
+                }
                 break;
             case "take":
                 board[this.data.fx][this.data.fy].hasBall = false;
@@ -140,7 +146,7 @@ function tryMove(fx, fy, tx, ty, moves) {
 function tryTake(tx, ty, fx, fy, moves) {
     if (fx < 0 || fx >= WIDTH || fy < 0 || fy >= HEIGHT)
         return;
-    if (!board[fx][fy].hasBall)
+    if (!board[fx][fy].hasBall || board[fx][fy].isEmpty)
         return;
     moves.push(new Move("take", {fx, fy, tx, ty}));
 }
@@ -332,10 +338,10 @@ function drawToScreen() {
         div.classList.add("move-type");
         if (currentMoveType == type)
             div.style.backgroundColor = "#41980a";
-        div.addEventListener("click", e => {
+        div.onclick = e => {
             currentMoveType = type;
             drawToScreen();
-        });
+        };
         moveTypes.appendChild(div);
     }
     for (let move of generateMovesFor(highlighted.x, highlighted.y, currentMoveType)) {
@@ -436,7 +442,7 @@ async function waitForResponse() {
     })
 }
 
-window.onclick = (e) => {
+document.body.onclick = (e) => {
   if (!isMyTurn) {
     return;
   }
