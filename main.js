@@ -82,10 +82,20 @@ class Move {
                 }
                 board[this.data.fx][this.data.fy].swapWith(this.data.tx, this.data.ty);
                 if (board[this.data.tx][this.data.ty].isGoal) {
-                    if (isMyTurn)
-                        setTimeout(alert, 500, "YOU WON");
-                    else
-                        setTimeout(alert, 500, "YOU LOST");
+                    if (this.data.ty < 3) {
+                        if (myColor == "red")
+                            setTimeout(alert, 500, "YOU WON");
+                        else
+                            setTimeout(alert, 500, "YOU LOST");
+                    }
+                    else {
+                        if (myColor == "red")
+                            setTimeout(alert, 500, "YOU LOST");
+                        else
+                            setTimeout(alert, 500, "YOU WON");
+                    }
+                    isMyTurn = false;
+                    isSecondMove = false;
                 }
                 break;
             case "take":
@@ -97,10 +107,20 @@ class Move {
                 board[this.data.fx][this.data.fy].hasBall = false;
                 board[this.data.tx][this.data.ty].hasBall = true;
                 if (board[this.data.tx][this.data.ty].isGoal) {
-                    if (isMyTurn)
-                        setTimeout(alert, 500, "YOU WON");
-                    else
-                        setTimeout(alert, 500, "YOU LOST");
+                    if (this.data.ty < 3) {
+                        if (myColor == "red")
+                            setTimeout(alert, 500, "YOU WON");
+                        else
+                            setTimeout(alert, 500, "YOU LOST");
+                    }
+                    else {
+                        if (myColor == "red")
+                            setTimeout(alert, 500, "YOU LOST");
+                        else
+                            setTimeout(alert, 500, "YOU WON");
+                    }
+                    isMyTurn = false;
+                    isSecondMove = false;
                 }
                 break;
             case "swap":
@@ -108,7 +128,7 @@ class Move {
                 break;
         }
         if (isMyTurn && !isSecondMove)
-            sendMessage("move=" + this.URIfy())
+            sendMessage("move=" + this.URIfy());
         else if (isMyTurn && isSecondMove) {
             lastTakes = {};
             sendMessage("move="+this.URIfy()).then(response => {
@@ -138,7 +158,7 @@ class Move {
 function tryMove(fx, fy, tx, ty, moves) {
     if (tx < 0 || tx >= WIDTH || ty < 0 || ty >= HEIGHT)
         return;
-    if (!board[tx][ty].isEmpty)
+    if (!board[tx][ty].isEmpty || board[tx][ty].isGoal)
         return;
     moves.push(new Move("move", {fx, fy, tx, ty}));
 }
@@ -159,6 +179,8 @@ function tryPass(fx, fy, dx, dy, moves, repeat = true) { // This will shoot out 
         fx += dx;
         fy += dy;
         if (fx < 0 || fx >= WIDTH || fy < 0 || fy >= HEIGHT)
+            return;
+        if (board[ox][oy].piece == "1" && !skim && board[fx][fy].isGoal)
             return;
         moves.push(new Move("pass", {fx: ox, fy: oy, tx: fx, ty: fy}));
         if (!board[fx][fy].isEmpty) {
