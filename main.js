@@ -119,6 +119,7 @@ class Move {
         if (isSecondMove) {
             isMyTurn = !isMyTurn;
             isSecondMove = false;
+            firstMove = null;
         }
         else {
             firstMove = this;
@@ -315,14 +316,16 @@ function drawToScreen() {
             brd.appendChild(square);
         }
     }
-    if (!highlighted || !isMyTurn)
-        return;
     let moveTypes = document.getElementById("move-types");
+    moveTypes.innerHTML = "";
+    if (!isMyTurn)
+        return moveTypes.innerHTML = "<h1>Waiting for other person (" + (isSecondMove*1) + "/2 moves)...</h1>";
+    if (!highlighted)
+        return moveTypes.innerHTML = "<h1>Click a piece to show options</h1>";
     let types = ["Move", "Take", "Pass", "Swap"];
     types = types.filter(t => generateMovesFor(highlighted.x, highlighted.y, t).length > 0);
     if (currentMoveType.indexOf(currentMoveType) == -1)
         currentMoveType = types[0];
-    moveTypes.innerHTML = "";
     for (let type of ["Off", ...types]) {
         let div = document.createElement("div");
         div.innerText = type;
@@ -408,6 +411,7 @@ function establishConnection(gameCode) {
                     Move.unURIfy(response.split("move=").join("")).make();
                     isMyTurn = true;
                     isSecondMove = false;
+                    firstMove = null;
                 })
             })
         }
@@ -445,5 +449,6 @@ window.onclick = (e) => {
   if (board[x][y].isEmpty || board[x][y].color != myColor)
     return;
   highlighted = {x, y};
+  currentMoveType = "Move";
   drawToScreen();
 }
