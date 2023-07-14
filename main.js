@@ -204,15 +204,7 @@ function trySwap(fx, fy, tx, ty, moves) {
 function generateMovesFor(i, j, type) {
     let moves = [];
     switch (type.toLowerCase()) {
-        case "move/swap":
-            trySwap(i, j, i-1, j-1, moves);
-            trySwap(i, j, i-1, j, moves);
-            trySwap(i, j, i-1, j+1, moves);
-            trySwap(i, j, i, j-1, moves);
-            trySwap(i, j, i, j+1, moves);
-            trySwap(i, j, i+1, j-1, moves);
-            trySwap(i, j, i+1, j, moves);
-            trySwap(i, j, i+1, j+1, moves);
+        case "move":
             if (firstMove && 
                 firstMove.type == "move" && 
                 board[firstMove.data.tx][firstMove.data.ty].piece == board[i][j].piece && 
@@ -226,6 +218,16 @@ function generateMovesFor(i, j, type) {
             tryMove(i, j, i+1, j-1, moves);
             tryMove(i, j, i+1, j, moves);
             tryMove(i, j, i+1, j+1, moves);
+            break;
+        case "swap":
+            trySwap(i, j, i-1, j-1, moves);
+            trySwap(i, j, i-1, j, moves);
+            trySwap(i, j, i-1, j+1, moves);
+            trySwap(i, j, i, j-1, moves);
+            trySwap(i, j, i, j+1, moves);
+            trySwap(i, j, i+1, j-1, moves);
+            trySwap(i, j, i+1, j, moves);
+            trySwap(i, j, i+1, j+1, moves);
             break;
         case "take/pass":
             tryTake(i, j, i-1, j-1, moves);
@@ -347,7 +349,7 @@ function drawToScreen() {
         return moveTypes.innerHTML = "<h1>Waiting for other person (" + (isSecondMove*1) + "/2 moves)...</h1>";
     if (!highlighted)
         return moveTypes.innerHTML = "<h1>Click a piece to show moves</h1>";
-    let types = ["Move/Swap", "Take/Pass"];
+    let types = ["Move", "Take/Pass", "Swap"];
     types = types.filter(t => generateMovesFor(highlighted.x, highlighted.y, t).length > 0);
     if (currentMoveIndex >= types.length) {
         currentMoveIndex = 0;
