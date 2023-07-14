@@ -10,6 +10,7 @@ let currentMoveIndex = 0;
 let isSecondMove = false;
 let firstMove = null;
 let lastTakes = {"red1": "black1", "black1": "red1"};
+let lastSwaps = {"red1": "black1", "black1": "red1"};
 
 class Cell {
     constructor() {
@@ -125,6 +126,10 @@ class Move {
                 }
                 break;
             case "swap":
+                if (board[this.data.tx][this.data.ty].hasBall && board[this.data.tx][this.data.ty].piece == "2") {
+                    board[this.data.tx][this.data.ty].hasBall = false;
+                    board[this.data.fx][this.data.fy].hasBall = true;
+                }
                 board[this.data.fx][this.data.fy].swapWith(this.data.tx, this.data.ty);
                 break;
         }
@@ -132,6 +137,7 @@ class Move {
             sendMessage("move=" + this.URIfy());
         else if (isMyTurn && isSecondMove) {
             lastTakes = {};
+            lastSwaps = {};
             sendMessage("move="+this.URIfy()).then(response => {
                 waitForResponse().then(response => {
                     Move.unURIfy(response.split("move=").join("")).make();
@@ -228,6 +234,12 @@ function generateMovesFor(i, j, type) {
             trySwap(i, j, i+1, j-1, moves);
             trySwap(i, j, i+1, j, moves);
             trySwap(i, j, i+1, j+1, moves);
+            for (let i = 0; i < moves.length; i++) {
+                let move = moves[i];
+                if (lastTakes[board[move.data.fx][move.data.fy].pieceAsWhole] == board[move.data.tx][move.data.ty].pieceAsWhole) {
+                    moves.splice(i--, 1);
+                }
+            }
             break;
         case "take/pass":
             tryTake(i, j, i-1, j-1, moves);
