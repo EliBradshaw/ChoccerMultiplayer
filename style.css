@@ -51,12 +51,6 @@ body {
     border-radius: 100%;
 }
 
-#join-game-button, #game-code-input, #response {
-    font-size: calc(0.04 * var(--min));
-    width:max-content;
-    height:max-content;
-}
-
 #move-types {
     display: flex;
     flex-flow: row nowrap;
@@ -76,4 +70,10 @@ body {
     box-shadow: 0px 0px 5px 3px orange;
     background-color: orange;
     border-radius: 100%;
+}
+input {
+    background-color: #136d15;
+    border: 2px solid black;
+    border-radius: 40px;
+    font-size: 130%;
 }

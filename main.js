@@ -1,8 +1,10 @@
 const WIDTH = 8;
 const HEIGHT = 8;
+const boardChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>";
 
 let isMyTurn = true;
 let myColor = "red";
+/** @type {Cell[][]} */
 let board = [];
 let highlighted = null;
 let currentMoveType = "Move/Swap";
@@ -11,6 +13,67 @@ let isSecondMove = false;
 let firstMove = null;
 let lastTakes = {"red1": "black1", "black1": "red1"};
 let lastSwaps = {"red1": "black1", "black1": "red1"};
+let [loc, code] = document.location.toString().split('?');
+code = code || "KKe9EMB8dHzr";
+function convertToString() {
+    let out = "";
+    let pieces = [];
+    for (let x in board) {
+        for (let y in board[x]) {
+            let cell = board[x][y];
+            if (cell.isEmpty && !cell.hasBall)
+                continue;
+            cell.x = x-0;
+            cell.y = y-0;
+            if (cell.hasBall)
+                pieces.unshift(cell);
+            if (!cell.isEmpty)
+                pieces.push(cell);
+        }
+    }
+    let foundBall = false;
+    pieces = pieces.map(a=>{
+        return {
+            a,
+            value: (a.hasBall && !foundBall && (foundBall = true)) * 100 + (a.color == "red") * 10 - a.innerPiece * 1
+        }
+    }).sort((a, b) => b.value - a.value).map(a=>a.a);
+    console.log(pieces);
+
+    for (let piece of pieces) {
+        out += boardChars[piece.x*8 + piece.y];
+    }
+    out += myColor == 'red' ? 'b' : 'r';
+    return out;
+}
+
+function importFromString(string) {
+    let postions = [];
+    let num = 0;
+    let color = "red";
+    let turn = string[string.length-1];
+    isMyTurn = true;
+    myColor = turn == 'r' ? "red" : "black";
+    for (let posChar of string) {
+        let i = boardChars.indexOf(posChar);
+        let x = i >> 3;
+        let y = i % 8;
+        if (num == 0) {
+            board[x][y].hasBall = true;
+        }
+        else {
+            board[x][y].innerPiece = num;
+            board[x][y].color = color;
+        }
+        num++;
+        if (num == 6) {
+            num = 1;
+            if (color == "black")
+                break;
+            color = "black";
+        }
+    }
+}
 
 class Cell {
     constructor() {
@@ -18,6 +81,8 @@ class Cell {
         this.color = "red";
         this.innerPiece = "0";
         this.isGoal = false;
+        this.x = -1;
+        this.y = -1;
     }
 
     /**
@@ -66,15 +131,6 @@ class Move {
         this.data = data;
     }
 
-    URIfy() {
-        return encodeURIComponent(JSON.stringify(this));
-    }
-
-    static unURIfy(URI) {
-        let json = JSON.parse(decodeURIComponent(URI));
-        return new Move(json.type, json.data);
-    }
-
     make() {
         switch (this.type) {
             case "move":
@@ -96,8 +152,6 @@ class Move {
                         else
                             setTimeout(alert, 500, "YOU WON");
                     }
-                    isMyTurn = false;
-                    isSecondMove = false;
                 }
                 break;
             case "take":
@@ -121,33 +175,16 @@ class Move {
                         else
                             setTimeout(alert, 500, "YOU WON");
                     }
-                    isMyTurn = false;
-                    isSecondMove = false;
                 }
                 break;
             case "swap":
-                if (board[this.data.tx][this.data.ty].hasBall && board[this.data.tx][this.data.ty].piece == "2") {
+                if (board[this.data.tx][this.data.ty].hasBall && board[this.data.fx][this.data.fy].piece == "2") {
                     board[this.data.tx][this.data.ty].hasBall = false;
                     board[this.data.fx][this.data.fy].hasBall = true;
                 }
+                lastSwaps[board[this.data.tx][this.data.ty].pieceAsWhole] = board[this.data.fx][this.data.fy].pieceAsWhole;
                 board[this.data.fx][this.data.fy].swapWith(this.data.tx, this.data.ty);
                 break;
-        }
-        if (isMyTurn && !isSecondMove)
-            sendMessage("move=" + this.URIfy());
-        else if (isMyTurn && isSecondMove) {
-            lastTakes = {};
-            lastSwaps = {};
-            sendMessage("move="+this.URIfy()).then(response => {
-                waitForResponse().then(response => {
-                    Move.unURIfy(response.split("move=").join("")).make();
-                    waitForResponse().then(response => {
-                        Move.unURIfy(response.split("move=").join("")).make();
-                        isMyTurn = true;
-                        isSecondMove = false;
-                    })
-                })
-            })
         }
         if (isSecondMove) {
             isMyTurn = !isMyTurn;
@@ -159,6 +196,7 @@ class Move {
             isSecondMove = true;
         }
         drawToScreen();
+        convertToString();
     }
 }
 
@@ -236,7 +274,7 @@ function generateMovesFor(i, j, type) {
             trySwap(i, j, i+1, j+1, moves);
             for (let i = 0; i < moves.length; i++) {
                 let move = moves[i];
-                if (lastTakes[board[move.data.fx][move.data.fy].pieceAsWhole] == board[move.data.tx][move.data.ty].pieceAsWhole) {
+                if (lastSwaps[board[move.data.fx][move.data.fy].pieceAsWhole] == board[move.data.tx][move.data.ty].pieceAsWhole) {
                     moves.splice(i--, 1);
                 }
             }
@@ -292,30 +330,13 @@ function initBoard() {
         }
     }
 
-    board[0][HEIGHT>>1].piece = "r2";
-    board[WIDTH-1][HEIGHT>>1].piece = "r3";
-    board[WIDTH>>1][HEIGHT>>1].piece = "r1b";
-    board[WIDTH>>1][HEIGHT-2].piece = "r5";
-    board[(WIDTH>>1)-1][HEIGHT-2].piece = "r4";
-
-    board[WIDTH>>1][HEIGHT-1].isGoal = true;
-    board[(WIDTH>>1)-1][HEIGHT-1].isGoal = true;
-
-    board[0][(HEIGHT>>1)-1].piece = "b3";
-    board[WIDTH-1][(HEIGHT>>1)-1].piece = "b2";
-    board[(WIDTH>>1)-1][(HEIGHT>>1)-1].piece = "b1";
-    board[WIDTH>>1][1].piece = "b4";
-    board[(WIDTH>>1)-1][1].piece = "b5";
-
-    board[WIDTH>>1][0].isGoal = true;
-    board[(WIDTH>>1)-1][0].isGoal = true;
+    importFromString(code);
 }
 initBoard();
 
 function drawToScreen() {
     let brd = document.getElementById("board");
     brd.style.display = "flex";
-    document.getElementById("game-lobby").style.display = "none";
     brd.innerHTML = "";
     for (let x = 0; x < WIDTH; x++) {
         for (let y = 0; y < HEIGHT; y++) {
@@ -357,10 +378,32 @@ function drawToScreen() {
     }
     let moveTypes = document.getElementById("move-types");
     moveTypes.innerHTML = "";
-    if (!isMyTurn)
-        return moveTypes.innerHTML = "<h1>Waiting for other person (" + (isSecondMove*1) + "/2 moves)...</h1>";
-    if (!highlighted)
-        return moveTypes.innerHTML = "<h1>Click a piece to show moves</h1>";
+    if (!highlighted) {
+        let newGame = document.createElement("form");
+        newGame.action = loc;
+        let innerNG = document.createElement("input");
+        innerNG.value = "New Game";
+        innerNG.type = "submit";
+        newGame.appendChild(innerNG);
+        let link = document.createElement("input");
+        link.disabled = true;
+        link.value = `${loc}?${convertToString()}`;
+        let copy = document.createElement("input");
+        copy.value = "Copy Game Link";
+        copy.type = "button";
+        copy.onclick = () => {
+            link.select();
+            link.setSelectionRange(0, 99999); // For mobile devices
+
+            // Copy the text inside the text field
+            navigator.clipboard.writeText(link.value);
+            copy.value = "Copied!";
+        }
+        moveTypes.appendChild(newGame);
+        moveTypes.appendChild(link);
+        moveTypes.appendChild(copy);
+        return;
+    }
     let types = ["Move", "Take/Pass", "Swap"];
     types = types.filter(t => generateMovesFor(highlighted.x, highlighted.y, t).length > 0);
     if (currentMoveIndex >= types.length) {
@@ -418,61 +461,6 @@ function drawToScreen() {
         })
     }
 }
-// Event listeners
-document.getElementById("join-game-button").addEventListener("click", joinGame);
-let gameCode = document.getElementById("game-code-input").value = Math.random().toString(36).substring(4);
-
-// Function to join the game
-function joinGame() {
-  gameCode = document.getElementById("game-code-input").value;
-  establishConnection(gameCode);
-  document.getElementById("response").innerText = "Joining game, please wait...";
-}
-
-// Function to establish the connection and set up messaging
-function establishConnection(gameCode) {
-    let myNum = Math.random();
-    sendMessage("join=" + myNum).then(response => {
-        let pick = Number(response.split("join=").join("")) < myNum;
-        document.getElementById("response").innerText = "You go " + (pick ? "first. \nMake a move" : "second. \nPlease wait");
-        isMyTurn = pick;
-        if (!pick)
-            myColor = "black";
-        drawToScreen();
-        if (!pick) {
-            waitForResponse().then(response => {
-                Move.unURIfy(response.split("move=").join("")).make();
-                waitForResponse().then(response => {
-                    Move.unURIfy(response.split("move=").join("")).make();
-                    isMyTurn = true;
-                    isSecondMove = false;
-                    firstMove = null;
-                })
-            })
-        }
-    });
-}
-
-async function sendMessage(message) {
-    return new Promise(resolve => {
-    fetch(
-        `https://demo.httprelay.io/sync/${gameCode}?${message}`
-    )
-        .then(function (response) {
-            resolve(response.headers.get("Httprelay-Query"));
-        }).catch(function (error) {
-            sendMessage(message).then(resolve);
-        })
-    });
-}
-async function waitForResponse() {
-    return new Promise(resolve => {
-        sendMessage("wait=true").then(message => {
-            resolve(message);
-        })
-    })
-}
-
 document.body.onclick = (e) => {
   if (!isMyTurn) {
     return;
@@ -492,3 +480,5 @@ document.body.onclick = (e) => {
   highlighted = {x, y};
   drawToScreen();
 }
+
+drawToScreen();
