@@ -14,8 +14,9 @@ let firstMove = null;
 let lastTakes = {"red1": "black1", "black1": "red1"};
 let lastSwaps = {"red1": "black1", "black1": "red1"};
 let [loc, code] = document.location.toString().split('?');
-code = code || "KKe9EMB8dHzr";
-function convertToString() {
+let lastMoves = [];
+code = code || "KKe9EMB8dHzr|-|-";
+function convertToString(useCode = true) {
     let out = "";
     let pieces = [];
     for (let x in board) {
@@ -23,8 +24,6 @@ function convertToString() {
             let cell = board[x][y];
             if (cell.isEmpty && !cell.hasBall)
                 continue;
-            cell.x = x-0;
-            cell.y = y-0;
             if (cell.hasBall)
                 pieces.unshift(cell);
             if (!cell.isEmpty)
@@ -38,22 +37,26 @@ function convertToString() {
             value: (a.hasBall && !foundBall && (foundBall = true)) * 100 + (a.color == "red") * 10 - a.innerPiece * 1
         }
     }).sort((a, b) => b.value - a.value).map(a=>a.a);
-    console.log(pieces);
 
     for (let piece of pieces) {
         out += boardChars[piece.x*8 + piece.y];
     }
+    if (useCode) {
+        out = code.split("|")[0];
+        out = out.substring(0, out.length-1);
+    }
     out += myColor == 'red' ? 'b' : 'r';
+    out += "|";
+    out += lastMoves[0] ? lastMoves[0].URIfy() : "-";
+    out += "|";
+    out += lastMoves[1] ? lastMoves[1].URIfy() : "-";
     return out;
 }
 
 function importFromString(string) {
-    let postions = [];
     let num = 0;
     let color = "red";
-    let turn = string[string.length-1];
-    isMyTurn = true;
-    myColor = turn == 'r' ? "red" : "black";
+    isMyTurn = false;
     for (let posChar of string) {
         let i = boardChars.indexOf(posChar);
         let x = i >> 3;
@@ -73,16 +76,41 @@ function importFromString(string) {
             color = "black";
         }
     }
+    let lastMoves = string.split("|");
+    let t = lastMoves.shift();
+    let turn = t[t.length-1];
+    myColor = turn == 'r' ? "red" : "black";
+    lastMoves = lastMoves.map(a=> {
+        if (a == "-")
+            return null;
+        return Move.unURIfy(a);
+    });
+    let gap = 500;
+    for (let mov of lastMoves) {
+        if (!mov)
+            continue;
+        setTimeout(()=> {
+            mov.make(false);
+        }, gap);
+        gap *= 2;
+    }
+    setTimeout(()=> {
+        isMyTurn = true;
+        isSecondMove = false
+        firstMove = null;
+        lastMoves = [];
+        code = convertToString(false);
+    }, gap);
 }
 
 class Cell {
-    constructor() {
+    constructor(x, y) {
         this.hasBall = false;
         this.color = "red";
         this.innerPiece = "0";
         this.isGoal = false;
-        this.x = -1;
-        this.y = -1;
+        this.x = x;
+        this.y = y;
     }
 
     /**
@@ -131,7 +159,18 @@ class Move {
         this.data = data;
     }
 
-    make() {
+    URIfy() {
+        return encodeURIComponent(JSON.stringify(this));
+    }
+
+    static unURIfy(URI) {
+        let json = JSON.parse(decodeURIComponent(URI));
+        return new Move(json.type, json.data);
+    }
+
+    make(keep = true) {
+        if (keep)
+            lastMoves.push(this);
         switch (this.type) {
             case "move":
                 if (board[this.data.tx][this.data.ty].hasBall) {
@@ -196,7 +235,6 @@ class Move {
             isSecondMove = true;
         }
         drawToScreen();
-        convertToString();
     }
 }
 
@@ -326,10 +364,13 @@ function initBoard() {
     for (let i = 0; i < WIDTH; i++) {
         board.push([]);
         for (let j = 0; j < HEIGHT; j++) {
-            board[i].push(new Cell());
+            board[i].push(new Cell(i, j));
         }
     }
-
+    board[3][0].isGoal =
+    board[4][0].isGoal =
+    board[3][7].isGoal =
+    board[4][7].isGoal = true;
     importFromString(code);
 }
 initBoard();
@@ -385,18 +426,15 @@ function drawToScreen() {
         innerNG.value = "New Game";
         innerNG.type = "submit";
         newGame.appendChild(innerNG);
-        let link = document.createElement("input");
+        let link = document.createElement("a");
         link.disabled = true;
-        link.value = `${loc}?${convertToString()}`;
+        link.innerText = "Game link"
+        link.href = `${loc}?${convertToString()}`;
         let copy = document.createElement("input");
         copy.value = "Copy Game Link";
         copy.type = "button";
         copy.onclick = () => {
-            link.select();
-            link.setSelectionRange(0, 99999); // For mobile devices
-
-            // Copy the text inside the text field
-            navigator.clipboard.writeText(link.value);
+            navigator.clipboard.writeText(link.href);
             copy.value = "Copied!";
         }
         moveTypes.appendChild(newGame);
