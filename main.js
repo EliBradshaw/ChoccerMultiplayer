@@ -15,7 +15,7 @@ let lastTakes = {};
 let lastSwaps = {};
 let [loc, code] = document.location.toString().split('?');
 let lastMoves = [];
-code = code || "KKe9EMB8dHzr|-|-";
+code = code || "KKe9EMB8dHzr+-+-";
 function convertToString(useCode = true) {
     let out = "";
     let pieces = [];
@@ -42,13 +42,13 @@ function convertToString(useCode = true) {
         out += boardChars[piece.x*8 + piece.y];
     }
     if (useCode) {
-        out = code.split("|")[0];
+        out = code.split("+")[0];
         out = out.substring(0, out.length-1);
     }
     out += myColor == 'red' ? 'b' : 'r';
-    out += "|";
+    out += "+";
     out += lastMoves[0] ? lastMoves[0].URIfy() : "-";
-    out += "|";
+    out += "+";
     out += lastMoves[1] ? lastMoves[1].URIfy() : "-";
     return out;
 }
@@ -76,7 +76,7 @@ function importFromString(string) {
             color = "black";
         }
     }
-    let lastMoves = string.split("|");
+    let lastMoves = string.split("+");
     let t = lastMoves.shift();
     let turn = t[t.length-1];
     myColor = turn == 'r' ? "red" : "black";
