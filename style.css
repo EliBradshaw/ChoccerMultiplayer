@@ -71,9 +71,11 @@ body {
     background-color: orange;
     border-radius: 100%;
 }
-input {
+input, a {
+    text-align: center;
+    text-decoration: none;
     background-color: #136d15;
     border: 2px solid black;
     border-radius: 40px;
-    font-size: 130%;
+    font-size: 100%;
 }

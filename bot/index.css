@@ -76,7 +76,7 @@ body {
     background-color: #136d15;
     border: 2px solid black;
     padding: calc(0.02 * var(--min));
-    font-size: calc(0.05 * var(--min));
+    font-size: calc(0.02 * var(--min));
     border-radius: 40%;
 }
 .move {
@@ -90,5 +90,5 @@ input {
     background-color: #136d15;
     border: 2px solid black;
     border-radius: 40px;
-    font-size: 130%;
+    font-size: 100%;
 }

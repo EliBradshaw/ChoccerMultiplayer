@@ -420,13 +420,10 @@ function drawToScreen() {
     let moveTypes = document.getElementById("move-types");
     moveTypes.innerHTML = "";
     if (!highlighted) {
-        let newGame = document.createElement("form");
-        newGame.action = loc;
 
-        let innerNG = document.createElement("input");
-        innerNG.value = "New Game";
-        innerNG.type = "submit";
-        newGame.appendChild(innerNG);
+        let innerNG = document.createElement("a");
+        innerNG.innerText = "New Game";
+        innerNG.href = loc;
 
         let link = document.createElement("a");
         link.disabled = true;
@@ -445,9 +442,10 @@ function drawToScreen() {
         playBot.innerText = "Play bot";
         playBot.href = `bot/`;
 
-        moveTypes.appendChild(link);
-        moveTypes.appendChild(newGame);
+        
         moveTypes.appendChild(copy);
+        moveTypes.appendChild(innerNG);
+        moveTypes.appendChild(link);
         moveTypes.appendChild(playBot);
         return;
     }
