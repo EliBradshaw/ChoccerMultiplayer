@@ -443,8 +443,7 @@ function drawToScreen() {
 
         let playBot = document.createElement("a");
         playBot.innerText = "Play bot";
-        console.log(loc);
-        playBot.href = `${loc}/bot/`;
+        playBot.href = `bot/`;
 
         moveTypes.appendChild(link);
         moveTypes.appendChild(newGame);
