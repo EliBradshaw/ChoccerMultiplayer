@@ -144,28 +144,42 @@ function showHighlight(x, y) {
     drawToScreen();
     for (let i of myMovs) {
         let high;
+        let square;
         if (i.moveType == MoveData.MOVE) {
+            square = document.getElementById(i.tx + "," + i.ty);
             high = document.getElementById(i.tx + "," + i.ty + "c");
-            high.style.backgroundColor = "yellow";
-        }
-        else if (i.moveType == MoveData.SWAP) {
-            high = document.getElementById(i.tx + "," + i.ty + "c");
-            high.style.color = "yellow";
+            high.classList.remove("piece");
+            high.style.opacity = 1;
+            high.classList.add("move");
+            square.appendChild(high);
         }
         else if (i.moveType == MoveData.STEAL) {
             high = document.getElementById(i.fx + "," + i.fy + "c");
-            high.style.color = "darkred";
+            high.style.boxShadow = "0px 0px 5px 5px red";
         }
         else if (i.moveType == MoveData.KICK) {
-            high = document.getElementById(i.tx + "," + i.ty + "c");
-            if (board[i.tx][i.ty].isEmpty())
+            if (i.toSquare.isEmpty()) {
+                square = document.getElementById(i.tx + "," + i.ty);
+                high = document.getElementById(i.tx + "," + i.ty + "c");
+                high.classList.remove("piece");
+                high.style.opacity = 1;
+                high.classList.add("move");
                 high.style.backgroundColor = "blue";
-            else
-                high.style.color = "blue";
+                high.style.boxShadow = "0px 0px 5px 3px blue";
+                if ((i.tx == 0 || i.tx == 7) && (i.ty == 3 || i.ty == 4)) {
+                    high.style.backgroundColor = "green";
+                    high.style.boxShadow = "0px 0px 5px 3px green";
+                }
+                square.appendChild(high);
+            }
+            else {
+                high = document.getElementById(i.tx + "," + i.ty + "c");
+                high.style.boxShadow = "0px 0px 5px 5px blue";
+            }
         }
-        else if (i.moveType == MoveData.GOAL) {
+        else if (i.moveType == MoveData.SWAP) {
             high = document.getElementById(i.tx + "," + i.ty + "c");
-            high.style.backgroundColor = "green";
+            high.style.boxShadow = "0px 0px 5px 5px teal";
         }
         high.style.display = "flex";
  
@@ -315,7 +329,8 @@ function drawToScreen() {
                     c.style.boxShadow = "0px 0px 5px 5px orange";
             }
             c.classList.add("piece");
-            c.style.backgroundColor = board[i][j].isRed ? "red" : "gray";
+            if (!piece.isEmpty())
+                c.style.backgroundColor = board[i][j].isRed ? "red" : "gray";
             c.onclick = () => showHighlight(i, j);
             c.innerText = piece.stringify()[0];
             s.appendChild(c);
