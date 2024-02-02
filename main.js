@@ -422,14 +422,17 @@ function drawToScreen() {
     if (!highlighted) {
         let newGame = document.createElement("form");
         newGame.action = loc;
+
         let innerNG = document.createElement("input");
         innerNG.value = "New Game";
         innerNG.type = "submit";
         newGame.appendChild(innerNG);
+
         let link = document.createElement("a");
         link.disabled = true;
         link.innerText = "Game link"
         link.href = `${loc}?${convertToString()}`;
+
         let copy = document.createElement("input");
         copy.value = "Copy Game Link";
         copy.type = "button";
@@ -437,9 +440,16 @@ function drawToScreen() {
             navigator.clipboard.writeText(link.href);
             copy.value = "Copied!";
         }
-        moveTypes.appendChild(newGame);
+
+        let playBot = document.createElement("a");
+        playBot.innerText = "Play bot";
+        console.log(loc);
+        playBot.href = `${loc}/bot/`;
+
         moveTypes.appendChild(link);
+        moveTypes.appendChild(newGame);
         moveTypes.appendChild(copy);
+        moveTypes.appendChild(playBot);
         return;
     }
     let types = ["Move", "Take/Pass", "Swap"];

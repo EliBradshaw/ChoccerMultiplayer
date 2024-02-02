@@ -1,0 +1,94 @@
+:root {
+    --min: min(85vw, 80vh);
+    --full-width: var(--min);
+    --full-height: var(--min);
+    --width: 8;
+    --height: 8;
+    --piece-percentage: 0.7;
+    --move-percentage: 0.5;
+    user-select: none;
+}
+
+body {
+    background-color: green;
+    top: 0;
+    left: 0;
+    margin: 10px 0 0 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: absolute;
+    flex-flow: column nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.evaluation {
+    width: var(--full-width);
+    height: 6px;
+    background-color: black;
+    border: 1px black solid;
+}
+
+.red {
+    left: 0;
+    top: 0;
+    width: calc(var(--full-width) * 0.5);
+    background-color: red;
+    height: 6px;
+}
+
+#board {
+    display: flex; /* so that I can show it later */
+    flex-flow: row wrap;
+    width: var(--full-width);
+    height: var(--full-height);
+    border: 10px solid black;
+    margin-bottom: 10px;
+}
+
+.square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--full-width) / var(--width));
+    height: calc(var(--full-height) / var(--height));
+}
+.piece {
+    display: flex;
+    font-size: calc(0.06 * var(--min));
+    font-weight: bold;
+    align-items: center;
+    justify-content: center;
+    width: calc(calc(var(--full-width) / var(--width)) * var(--piece-percentage));
+    height: calc(calc(var(--full-height) / var(--height)) * var(--piece-percentage));
+    box-shadow: 0px 0px 5px 3px black;
+    border-radius: 100%;
+}
+
+#move-types {
+    display: flex;
+    flex-flow: row nowrap;
+    width: var(--full-width);
+    justify-content: space-around;
+}
+.move-type {
+    background-color: #136d15;
+    border: 2px solid black;
+    padding: calc(0.02 * var(--min));
+    font-size: calc(0.05 * var(--min));
+    border-radius: 40%;
+}
+.move {
+    width: calc(calc(var(--full-width) / var(--width)) * var(--move-percentage));
+    height: calc(calc(var(--full-height) / var(--height)) * var(--move-percentage));
+    box-shadow: 0px 0px 5px 3px orange;
+    background-color: orange;
+    border-radius: 100%;
+}
+input {
+    background-color: #136d15;
+    border: 2px solid black;
+    border-radius: 40px;
+    font-size: 130%;
+}
