@@ -76,6 +76,8 @@ input, a {
     text-decoration: none;
     background-color: #136d15;
     border: 2px solid black;
+    padding: calc(0.3vw + 0.2vh);
+    color: black;
     border-radius: 40px;
     font-size: 100%;
 }
