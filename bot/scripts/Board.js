@@ -106,7 +106,7 @@ export default class Board {
                     mul += 1.1;
             }
         }
-        return key;
+        return key - -this.redTurn;
     }
 
     storePosition(value) {
