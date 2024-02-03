@@ -151,4 +151,46 @@ export default class Move {
         this.undo();
         return outValue;
     }
+
+    static unURIfy(URI, board) {
+        console.log(URI);
+        let json = JSON.parse(decodeURIComponent(URI));
+        let uMap = {
+            move: MoveData.MOVE,
+            swap: MoveData.SWAP,
+            take: MoveData.STEAL,
+            pass: MoveData.KICK
+        }
+        if (uMap[json.type] === undefined)
+            throw "Unknown type: " + json.type;
+        let ret = new Move( 
+            json.data.fy, 
+            json.data.fx,
+            json.data.ty,
+            json.data.tx,
+            uMap[json.type],
+            board
+        );
+        console.log(ret);
+        return ret;
+    }
+
+    URIfy() {
+        let uMap = {};
+        uMap[MoveData.MOVE] = "move";
+        uMap[MoveData.SWAP] = "swap";
+        uMap[MoveData.STEAL] = "take";
+        uMap[MoveData.KICK] = "pass";
+        let t = this;
+        return encodeURIComponent(JSON.stringify({
+            data: {
+                fx: t.fy,
+                fy: t.fx,
+                tx: t.ty,
+                ty: t.tx
+            },
+            type: uMap[t.type]
+        }));
+    }
+
 }

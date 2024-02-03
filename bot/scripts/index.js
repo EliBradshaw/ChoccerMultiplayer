@@ -7,10 +7,101 @@ import Position from "./Position.js";
 let maxDepth = 1;
 /** @type {Move[]} */
 let currentlyHighlighted = {x: 0, y: 0};
+const boardChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>";
 
 const POSESSION_ADVANTAGE = 0;
  
 let board = new Board();
+
+let [loc, code] = document.location.toString().split('?');
+
+if (code)
+    importFromString(code);
+
+async function importFromString(string) {
+    let num = 0;
+    let color = true;
+    for (let i = 0; i < Board.SIZE; i++) {
+        for (let j = 0; j < Board.SIZE; j++) {
+            let piece = board[i][j];
+            piece.type = PieceData.EMPTY;
+            piece.isRed = false;
+            piece.hasBall = false;
+        }
+    } 
+    for (let posChar of string) {
+        let i = boardChars.indexOf(posChar);
+        let y = i >> 3;
+        let x = i % 8;
+        if (num == 0) {
+            board[x][y].hasBall = true;
+        }
+        else {
+            board[x][y].type = num;
+            board[x][y].isRed = color;
+        }
+        num++;
+        if (num == 6) {
+            num = 1;
+            if (color)
+                break;
+            color = false;
+        }
+    }
+    let list = string.split("+");
+    let t = list.shift();
+    let turn = t[t.length-1];
+    board.redTurn = turn != 'r';
+    list = list.map(a=> {
+        if (a == "-")
+            return null;
+        return Move.unURIfy(a, board);
+    });
+    for (let mov of list) {
+        if (!mov)
+            continue;
+        mov.make();
+    }
+    console.log(board.moveList);
+    await recurSort(maxDepth, 1, false);
+    await recurSort(maxDepth, 1, false);
+    console.log("HERE");
+}
+
+function convertToString() {
+    let out = "";
+    let pieces = [];
+    for (let x = 0; x < Board.SIZE; x++) {
+        for (let y = 0; y < Board.SIZE; y++) {
+            let cell = board[x][y];
+            if (cell.isEmpty() && !cell.hasBall)
+                continue;
+            if (cell.hasBall)
+                pieces.unshift(cell);
+            if (!cell.isEmpty())
+                pieces.push(cell);
+        }
+    }
+    let foundBall = false;
+    pieces = pieces.map(a=>{
+        return {
+            a,
+            value: (a.hasBall && !foundBall && (foundBall = true)) * 100 + (a.isRed) * 10 - a.type
+        }
+    }).sort((a, b) => b.value - a.value).map(a=>a.a);
+
+    for (let piece of pieces) {
+        out += boardChars[piece.x*8 + piece.y];
+    }
+    out = code.split("+")[0];
+    out = out.substring(0, out.length-1);
+    out += board.isRed ? 'b' : 'r';
+    out += "+";
+    out += board.moveList[0] ? board.moveList[0].URIfy() : "-";
+    out += "+";
+    out += board.moveList[1] ? board.moveList[1].URIfy() : "-";
+    return out;
+}
 
 /**
  * @param {number} depth
@@ -105,8 +196,8 @@ function endGameCheck() {
     return false;
 }
  
-function computerMove() {
-    return recurSort(maxDepth);
+async function computerMove() {
+    return await recurSort(maxDepth);
 }
  
 function showHighlight(x, y) {
@@ -320,8 +411,10 @@ function drawToScreen() {
             c.style.display = "flex";
             if (piece.isEmpty() && !piece.hasBall)
                 c.style.display = "none"
-            if (board[i][j].hasBall)
+            if (board[i][j].hasBall) {
+                c.style.backgroundColor = "white";
                 c.style.boxShadow = "0px 0px 5px 5px white";
+            }
             if (currentlyHighlighted && currentlyHighlighted.x == i && currentlyHighlighted.y == j) {
                 if (board[i][j].hasBall)
                     c.style.boxShadow = "0px 0px 5px 5px yellow";
@@ -472,8 +565,8 @@ window.onkeydown = ({ key }) => {
     }
 }
 
-async function recurSort(time, depth = 1) {
-    await new Promise(res => {
+function recurSort(time, depth = 1, auto = true) {
+    return new Promise(res => {
         let begin = performance.now();
         let final = minMax(depth, 0);
         let move = final.move;
@@ -483,18 +576,27 @@ async function recurSort(time, depth = 1) {
         if (time*1000 < total) {
             document.getElementById(move.fx + "," + move.fy).style.backgroundColor = "#ffce1f";
             move.make();
+            if (code && !board.secondTurn) {
+                let loc = (document.location+"").split(document.location.pathname)[0];
+                console.log(loc)
+                document.body.innerHTML = `<a href="${loc}/?${convertToString()}">Link to game</a>`;
+                res();
+                console.log("HOLA")
+                return;
+            }
             setTimeout(()=>{
                 drawToScreen();
                 document.getElementById(move.fx + "," + move.fy).style.backgroundColor = "#ffce1f";
                 document.getElementById(move.tx + "," + move.ty).style.backgroundColor = "#d9aa02";
                 if (endGameCheck()) 
                     return;
-                if (board.secondTurn)
+                if (board.secondTurn && auto)
                     setTimeout(recurSort, 500, maxDepth);
                 else
                     board.clearPositions();
             }, 500);
             res();
+            return;
         }
         else {
             setTimeout(recurSort, 0, time - total/1000, depth+1);
