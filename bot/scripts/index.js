@@ -26,7 +26,7 @@ function minMax(depth, inDep = 0, alpha = -Infinity, beta = Infinity) {
         return pos;
 
     const tte = board.getPosition();
-    if (tte && (tte.depth >= depth || tte.isTerminal)) {
+    if (tte && (tte.depth >= depth)) {
         if (tte.flag == "EXACT") {
             return tte;
         } else if (tte.flag == "LOWERBOUND") {
@@ -332,6 +332,22 @@ function drawToScreen() {
             if (!piece.isEmpty())
                 c.style.backgroundColor = board[i][j].isRed ? "red" : "gray";
             c.onclick = () => showHighlight(i, j);
+            s.oncontextmenu = e => {
+                e.preventDefault();
+                console.log(piece);
+                let prp = prompt("");
+                if (!prp) {
+                    piece.type = -1;
+                    piece.isRed = 0;
+                    piece.hasBall = 0;
+                    return drawToScreen();
+                }
+                let [t, r, b] = prp;
+                piece.type = t-0;
+                piece.isRed = r-0;
+                piece.hasBall = b-0;
+                drawToScreen();
+            }
             c.innerText = piece.stringify()[0];
             s.appendChild(c);
         }
