@@ -13,6 +13,8 @@ export default class Move {
         this.type = board[fx][fy].type;
         this.toType = board[tx][ty].type;
         this.pickedUp = board[tx][ty].hasBall;
+        this.toRed = board[tx][ty].isRed;
+        this.fromRed = board[fx][fy].isRed;
         this.isRed = moveType == MoveData.STEAL ? this.toSquare.isRed : this.fromSquare.isRed;
     }
     /** @type {Piece} */

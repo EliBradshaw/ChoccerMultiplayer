@@ -10,7 +10,7 @@ let maxDepth = 1;
 let currentlyHighlighted = {x: 0, y: 0};
 const boardChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>";
 
-const POSESSION_ADVANTAGE = 0;
+const POSESSION_ADVANTAGE = 30;
  
 let board = new Board();
 board.redTurn = confirm("Would you like to go first?");
@@ -197,10 +197,10 @@ function quiescenceSearch(alpha, beta, depth, inDep) {
         return standPat.value;
     }
 
-    // const BIG_DELTA = POSESSION_ADVANTAGE;
-    // if (standPat.value < alpha - BIG_DELTA) {
-    //     return alpha;
-    // }
+    const BIG_DELTA = POSESSION_ADVANTAGE;
+    if (standPat.value < alpha - BIG_DELTA) {
+        return alpha;
+    }
     // If the standPat score is better than alpha, update alpha
     if (standPat.value > alpha) {
         alpha = standPat.value;
@@ -398,18 +398,22 @@ function evaluate(inDep = 1) {
     let blackPos = false;
     let redPieces = [];
     let blackPieces = [];
+    let ballPos = [];
     for (let x = 0; x < Board.WIDTH; x++) {
         for (let y = 0; y < Board.HEIGHT; y++) {
             let piece = board[x][y];
+            if (piece.isRed)
+                red += (8 - x) * (1 + (piece.hasBall)) / 2;
+            else if (!piece.isEmpty)
+                black += x * (1 + (piece.hasBall)) / 2;
             if (piece.hasBall) {
+                ballPos = [x, y]
                 if (!piece.isEmpty()) {
                     if (piece.isRed) {
-                        red += (8 - x) * (1 + (piece.hasBall - -(piece.type == PieceData.TWO)));
                         redPos = true;
                         red += POSESSION_ADVANTAGE;
                     }
                     else {
-                        black += x * (1 + (piece.hasBall - -(piece.type == PieceData.TWO)));
                         blackPos = true;
                         black += POSESSION_ADVANTAGE;
                     }
@@ -425,6 +429,8 @@ function evaluate(inDep = 1) {
     }
 
     let dist = 0;
+    let rbd = 0;
+    let bbd = 0;
     for (let rp of redPieces) {
         let closDis = 1000;
         for (let bp of blackPieces) {
@@ -434,12 +440,29 @@ function evaluate(inDep = 1) {
             dist += tdis ** 2 / 6;
         }
         dist += closDis ** 2;
+
+        let bdis = Math.max(Math.abs(rp.x - ballPos[0]), Math.abs(rp.y - ballPos[1]));
+        rbd = Math.min(rbd, bdis);
     }
 
-    if (redPos)
+    for (let bp of blackPieces) {
+        let bdis = Math.max(Math.abs(bp.x - ballPos[0]), Math.abs(bp.y - ballPos[1]));
+        bbd = Math.min(bbd, bdis);
+    }
+
+    if (redPos) {
         red += dist / 5000000;
-    else if (blackPos)
+        black -= bbd / 2500000;
+    }
+    else if (blackPos) {
         black += dist / 5000000;
+        red -= rbd / 2500000;
+    }
+    else {
+        red -= rbd;
+        black -= bbd;
+        return new Position(red - black - Math.random() / 100);
+    }
 
     let gr = goalRays();
     if (gr > 0)
@@ -618,9 +641,6 @@ window.onkeydown = ({ key }) => {
     if (key == "Enter") {
         computerMove(0, true);
         drawToScreen();
-        setTimeout(computerMove, 0, 0, true);
-        drawToScreen();
-        setTimeout(computerMove, 0);
     }
 }
 

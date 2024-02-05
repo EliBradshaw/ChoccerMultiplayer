@@ -56,8 +56,8 @@ export default class Board {
         if (this.moveList.length < 4)
             return false;
         let [mov1, mov2] = this.lastTwo();
-        let oneRight = mov1.toType == from.type && mov1.type == to.type && mov1.moveType == MoveData.STEAL;
-        let twoRight = mov2.toType == from.type && mov2.type == to.type && mov2.moveType == MoveData.STEAL;
+        let oneRight = mov1.toType == from.type && mov1.type == to.type && mov1.moveType == MoveData.STEAL && mov1.toRed != to.isRed;
+        let twoRight = mov2.toType == from.type && mov2.type == to.type && mov2.moveType == MoveData.STEAL && mov2.toRed != to.isRed;
         return !(oneRight || twoRight);
     }
 
@@ -65,8 +65,8 @@ export default class Board {
         if (this.moveList.length < 4)
             return false;
         let [mov1, mov2] = this.lastTwo();
-        let oneRight = mov1.toType == from.type && mov1.type == to.type && mov1.moveType == MoveData.SWAP;
-        let twoRight = mov2.toType == from.type && mov2.type == to.type && mov2.moveType == MoveData.SWAP;
+        let oneRight = mov1.toType == from.type && mov1.type == to.type && mov1.moveType == MoveData.SWAP && mov1.toRed != to.isRed;
+        let twoRight = mov2.toType == from.type && mov2.type == to.type && mov2.moveType == MoveData.SWAP && mov2.toRed != to.isRed;
         return !(oneRight || twoRight);
     }
 
