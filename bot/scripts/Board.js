@@ -39,7 +39,7 @@ export default class Board {
         this[6][3].setType(PieceData.FOUR).setColor(true);
         this[6][4].setType(PieceData.FIVE).setColor(true);
 
-        if (winner)
+        if (!winner)
             this[3][3].setBall(true);
         else
             this[4][4].setBall(true);

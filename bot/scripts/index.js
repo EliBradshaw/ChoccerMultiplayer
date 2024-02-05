@@ -1,6 +1,7 @@
 import Board from "./Board.js";
 import Move from "./Move.js";
 import MoveData from "./MoveData.js";
+import Piece from "./Piece.js";
 import PieceData from "./PieceData.js";
 import Position from "./Position.js";
  
@@ -12,7 +13,11 @@ const boardChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678
 const POSESSION_ADVANTAGE = 0;
  
 let board = new Board();
-
+board.redTurn = confirm("Would you like to go first?");
+if (!board.redTurn) {
+    board.reset(true);
+    setTimeout(_ => recurSort(maxDepth), 100);
+}
 let [loc, code] = document.location.toString().split('?');
 
 if (code)
@@ -137,8 +142,15 @@ function minMax(depth, inDep = 0, alpha = -Infinity, beta = Infinity) {
         throw "NO MOVES";
     for (let move of possibleMoves) {
         move.make();
-        let extensions = 1
-        final = minMax(depth-extensions, inDep+1, alpha, beta);
+        let extensions = 1;
+
+        // Add quiescence search
+        if (depth <= 1) {
+            final = new Position(quiescenceSearch(alpha, beta, depth - 1, inDep + 1));
+        } else {
+            final = minMax(depth - extensions, inDep + 1, alpha, beta);
+        }
+        
         final.move = move;
         move.undo();
 
@@ -176,6 +188,47 @@ function minMax(depth, inDep = 0, alpha = -Infinity, beta = Infinity) {
     return bestMove;
 }
 
+function quiescenceSearch(alpha, beta, depth, inDep) {
+    // Evaluate the current position
+    let standPat = evaluate(inDep);
+    
+    // Check if the standPat score is enough to trigger a cutoff
+    if (depth <= 0 || standPat.value >= beta || standPat.isTerminal) {
+        return standPat.value;
+    }
+    // If the standPat score is better than alpha, update alpha
+    if (standPat.value > alpha) {
+        alpha = standPat.value;
+    }
+    
+    // Generate captures and other tactical moves
+    let captures = generatePossibleMoves(board.redTurn, 700);
+    
+    // Iterate over each capture move
+    for (let capture of captures) {
+        let br = board.redTurn;
+        capture.make();
+        let change = (board.redTurn != br);
+        
+        // Recur deeper into the search with reduced depth
+        let score;
+        if (change)
+            score = -quiescenceSearch(-beta, -alpha, depth - 1, inDep + 1);
+        else
+            score = quiescenceSearch(alpha, beta, depth - 1, inDep + 1);
+
+        capture.undo();
+        // Update alpha if a better move is found
+        if (score >= beta) {
+            return beta; // Beta cutoff
+        }
+        if (score > alpha) {
+            alpha = score;
+        }
+    }
+    
+    return alpha;
+}
  
 function endGameCheck() {
     if (!board.didScoreBlack && !board.didScoreRed)
@@ -248,7 +301,7 @@ function showHighlight(x, y) {
             high = document.getElementById(i.fx + "," + i.fy + "c");
             high.style.boxShadow = "0px 0px 5px 5px red";
         }
-        else if (i.moveType == MoveData.KICK) {
+        else if (i.moveType == MoveData.KICK || i.moveType == MoveData.GOAL) {
             if (i.toSquare.isEmpty()) {
                 square = document.getElementById(i.tx + "," + i.ty);
                 high = document.getElementById(i.tx + "," + i.ty + "c");
@@ -346,12 +399,12 @@ function evaluate(inDep = 1) {
             if (piece.hasBall) {
                 if (!piece.isEmpty()) {
                     if (piece.isRed) {
-                        red += (8 - x);
+                        red += (8 - x) * (1 + (piece.hasBall - -(piece.type == PieceData.TWO)));
                         redPos = true;
                         red += POSESSION_ADVANTAGE;
                     }
                     else {
-                        black += x;
+                        black += x * (1 + (piece.hasBall - -(piece.type == PieceData.TWO)));
                         blackPos = true;
                         black += POSESSION_ADVANTAGE;
                     }
@@ -494,7 +547,7 @@ function tryAddShot(x, y, cx, cy, posMovs, repeat = true) {
 }
  
 /** @type {(sensor: number) => Move[]} */
-function generatePossibleMoves(isMax) {
+function generatePossibleMoves(isMax, lowBound = -Infinity) {
     let posMovs = [];
     let lastMove = board.moveList[board.moveList.length - 1];
     let canMove;
@@ -539,6 +592,7 @@ function generatePossibleMoves(isMax) {
         }
     }
     return posMovs.map(a=>new Position(a.weigh(()=>evaluate()), a))
+        .filter(a=>a.value >= lowBound)
         .sort((a, b) => b.value - a.value)
         .map(a => a.move);
 }
