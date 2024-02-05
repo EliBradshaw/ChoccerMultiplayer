@@ -196,6 +196,11 @@ function quiescenceSearch(alpha, beta, depth, inDep) {
     if (depth <= 0 || standPat.value >= beta || standPat.isTerminal) {
         return standPat.value;
     }
+
+    // const BIG_DELTA = POSESSION_ADVANTAGE;
+    // if (standPat.value < alpha - BIG_DELTA) {
+    //     return alpha;
+    // }
     // If the standPat score is better than alpha, update alpha
     if (standPat.value > alpha) {
         alpha = standPat.value;
