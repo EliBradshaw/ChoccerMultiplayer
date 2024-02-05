@@ -50,10 +50,6 @@ export default class Move {
             case MoveData.SWAP:
                 this.pickedUp = (this.type == PieceData.TWO && this.toSquare.hasBall)
                 this.toSquare.swapWith(this.fromSquare, this.board);
-                if (this.pickedUp) {
-                    this.toSquare.setBall(true);
-                    this.fromSquare.setBall(false);
-                }
             return;
             case MoveData.KICK:
                 this.fromSquare.setBall(false);
@@ -87,10 +83,6 @@ export default class Move {
             return;
             case MoveData.SWAP:
                 this.toSquare.swapWith(this.fromSquare, this.board);
-                if (this.pickedUp) {
-                    this.toSquare.setBall(true);
-                    this.fromSquare.setBall(false);
-                }
             return;
             case MoveData.KICK:
                 this.fromSquare.setBall(true);
